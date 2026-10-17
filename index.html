@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EMBER — Fire observation triage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#"><span class="brand-mark">✳</span><span>ember<span class="brand-dot">.</span></span></a>
+    <div class="workspace-label">WORKSPACE</div>
+    <button class="nav-item active" id="overviewNav"><span>◫</span> Overview</button>
+    <button class="nav-item" id="observationsNav"><span>◎</span> Observations <span class="nav-count" id="navCount">24</span></button>
+    <div class="sidebar-bottom"><div class="live-indicator"><i></i><span id="datasetSource">Synthetic sample loaded</span></div><div class="profile"><div class="avatar">AR</div><div><b>Analyst workspace</b><small>Local demo</small></div></div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div class="crumb">Workspace <span>/</span> <b>Overview</b></div><div class="top-actions"><span class="updated" id="updatedLabel"><i></i> Scoring reference</span><div class="avatar small">AR</div></div></header>
+    <section class="page-head"><div><div class="eyebrow"><span id="dateLabel">THURSDAY, OCTOBER 16, 2026</span> <span class="eyebrow-line"></span> <span id="datasetBadge">SYNTHETIC SAMPLE</span></div><h1>Fire observation triage</h1><p class="subtitle">A clearer view of satellite detections that may need a closer look.</p></div><div class="head-actions"><button class="btn secondary" id="downloadBtn">⇩ <span>Export filtered CSV</span></button><label class="btn primary" for="fileInput">＋ <span>Import observations</span></label><input id="fileInput" type="file" accept=".csv,text/csv" hidden></div></section>
+    <section class="notice"><span class="notice-icon">ⓘ</span><div><b>Review aid only</b><span>Satellite detections are not ground-truth confirmation. This dashboard does not provide emergency-response guidance.</span></div><button id="dismissNotice" aria-label="Dismiss">×</button></section>
+    <section class="stats-grid">
+      <article class="stat-card"><div class="stat-top"><span>OBSERVATIONS IN VIEW</span><span class="stat-symbol">◉</span></div><div class="stat-value" id="validCount">24</div><div class="stat-foot"><span>Matches current filters</span></div></article>
+      <article class="stat-card"><div class="stat-top"><span>HIGH PRIORITY</span><span class="stat-symbol coral">⌁</span></div><div class="stat-value" id="highCount">06</div><div class="stat-foot"><span class="soft-pill coral-bg">Score ≥ 70</span><span>in current view</span></div></article>
+      <article class="stat-card"><div class="stat-top"><span>NEARBY DETECTIONS</span><span class="stat-symbol amber">⟳</span></div><div class="stat-value" id="repeatCount">08</div><div class="stat-foot"><span class="soft-pill amber-bg">≤5 km and ≤24h</span><span>in current view</span></div></article>
+      <article class="stat-card"><div class="stat-top"><span>IMPORT VALIDATION</span><span class="stat-symbol mint">✓</span></div><div class="stat-value"><span id="quality">100</span><small>%</small></div><div class="stat-foot"><span id="qualityRows">24 accepted · 0 rejected</span></div></article>
+    </section>
+    <section class="content-grid">
+      <article class="panel map-panel"><div class="panel-head"><div><h2>Observation map</h2><p>NASA Blue Marble static basemap · points from the loaded dataset</p></div><div class="map-tools"><button class="map-tool" id="zoomOut" aria-label="Zoom out">−</button><button class="map-tool" id="zoomIn" aria-label="Zoom in">+</button></div></div><div id="map"></div><div class="map-legend"><span><i class="legend-dot critical"></i> High priority</span><span><i class="legend-dot medium"></i> Medium</span><span><i class="legend-dot low"></i> Low</span><span class="legend-note">Ring = nearby detection (not confirmation)</span></div></article>
+      <article class="panel priority-panel"><div class="panel-head"><div><h2>Priority queue</h2><p>Ranked within current filters</p></div><button class="text-btn" id="viewAll">View table <span>→</span></button></div><div class="priority-list" id="priorityList"></div><div class="score-note"><b>Experimental review heuristic, not fire probability or a validated risk estimate.</b><br>Recency ≤24h (30) + confidence (25) + FRP capped at 50 MW (25) + nearby detections (20). Reference: <span id="referenceTime"></span>. Nearby rule: ≤5 km and ≤24h.</div></article>
+    </section>
+    <section class="panel table-panel"><div class="table-heading"><div><h2>Recent observations</h2><p>Valid rows from the loaded dataset <span class="table-count" id="tableCount">24 records</span></p></div><button class="text-btn" id="clearFilters">Clear filters <span>↺</span></button></div>
+      <div id="importReport" class="import-report" hidden></div><div class="filters"><label class="search"><span>⌕</span><input id="searchInput" placeholder="Search location or satellite…"></label><label class="select-wrap"><span>Priority</span><select id="priorityFilter"><option value="all">All priorities</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select><b>⌄</b></label><label class="select-wrap"><span>Confidence</span><select id="confidenceFilter"><option value="all">Any confidence</option><option value="high">High (≥80%)</option><option value="nominal">Nominal</option><option value="low">Low (&lt;50%)</option></select><b>⌄</b></label></div>
+      <div class="table-scroll"><table><thead><tr><th>LOCATION</th><th>OBSERVED (UTC)</th><th>SATELLITE</th><th>CONFIDENCE</th><th>FRP <small>MW</small></th><th>PRIORITY SCORE</th><th></th></tr></thead><tbody id="tableBody"></tbody></table></div><div class="table-footer"><span id="showing">Showing 1–8 of 24 observations</span><div class="pagination"><button id="prevPage" aria-label="Previous page">‹</button><span id="pagination"></span><button id="nextPage" aria-label="Next page">›</button></div></div>
+    </section>
+  <footer>EMBER <span>·</span> All built-in observations are synthetic. Satellite detections are indicative and can be affected by cloud cover, observation gaps, and non-fire heat sources.</footer>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script><script src="core.js"></script><script src="app.js"></script>
+</body></html>
